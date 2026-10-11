@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration 3 re-run of the full backend regression + new feature assertions for KG Vac Service Job Manager (Quick Reschedule, Daily Summary Email loop, Overdue Jobs Badge, Signature Capture). 57 pytest cases passed, 3 skipped (pre-existing TEST_ user state from earlier iterations — not regressions). All new feature endpoints verified: GET /api/dashboard/stats returns 'overdue' key (admin + staff-scoped), GET /api/jobs?overdue=true returns only overdue jobs with staff scoping, is_overdue boolean present on list + detail (false for Completed/Cancelled), POST /api/jobs/{id}/status with signature_data persists signature_data + signature_captured_at, Reschedule still 400s without scheduled_date/time, past-due job flips is_overdue true→false after Completed and overdue count decrements. Server starts cleanly with daily_summary_loop lifespan task — no CancelledError/import errors in backend logs. Pre-existing side-effect: staff1/staff2 passwords were left mutated by prior iteration's change-password test (not reset by seed); fixed by directly re-hashing seed passwords in Mongo before this run (one-time repair, documented below).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/jobs?overdue=true&date_from=...", "issue": "Still unresolved from iter 2: combining overdue=true with date_from/date_to overwrites the overdue scheduled_at:{$lt:now} filter (server.py:787 reassigns query['scheduled_at']). Low priority — UI uses overdue filter standalone."},
+      {"endpoint": "POST /api/auth/change-password (side-effect on seed users)", "issue": "TestChangePassword mutates staff1@kgvac.com's password; nothing resets it afterwards. Across iterations the next test run fails staff1_login (and staff2 was already in this state from iter 2). Recommend either (a) using a disposable TEST_ user for the change-password test, or (b) a teardown fixture that restores seed password, or (c) make the seed script idempotently reset known seed accounts on every backend boot."},
+      {"endpoint": "Email provider /email/send", "issue": "Repeated 'Email send failed: Client error 422 unknown' warnings in backend logs from Emergent email integration (likely payload shape mismatch). Does not crash the loop (exception is caught) but means forgot-password / assignment / status-change / daily-summary emails are not actually delivering. Needs investigation of the request payload against the Emergent email API spec."},
+      {"endpoint": "Push notifications", "issue": "'Push failed 401: invalid X-Push-Key' — EMERGENT_PUSH_KEY is set to 'placeholder' in backend/.env, so all push notifications fail. Pre-existing; swallowed by exception handler so does not break any endpoint."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_kgvac_backend.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Make the seed/startup routine idempotently reset admin+staff1+staff2 passwords to the SEED_*_PASSWORD env values on each boot (currently seed only creates missing users). This will prevent cross-iteration test rot without manual Mongo surgery.",
+    "Fix the Emergent email integration payload — all /email/send calls return 422 'unknown'. Daily summary emails will silently fail to send even at noon UTC.",
+    "Configure a real EMERGENT_PUSH_KEY in backend/.env (currently 'placeholder' → every push returns 401).",
+    "Optional: merge overdue=true with date_from/date_to in list_jobs instead of overwriting scheduled_at filter (server.py:~787).",
+    "Optional: add a dev-only admin trigger endpoint (e.g. POST /api/admin/trigger-daily-summary) to make the daily_summary_loop testable via HTTP."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 1042 lines — still above the 700-line split threshold. Consider modularizing into routers (auth, jobs, dashboard, users, notifications).",
+    "enrich_jobs computes is_overdue correctly: false for Completed/Cancelled, true only when scheduled_at<now and status in active set — verified end-to-end.",
+    "StatusChangeIn.signature_data optional; signature_captured_at set only when provided — verified.",
+    "daily_summary_loop is wrapped in try/except with sleep-on-error; lifespan starts task2 and cancels on shutdown — looks clean."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (57/57 executed, 3 pre-existing skips)", "frontend": "N/A (not requested)"},
+  "seed_data_creation": "Tests reuse/create TEST_-prefixed customers, categories, and jobs idempotently. Additionally, performed a one-time repair of staff1/staff2/admin password hashes in MongoDB (/tmp/reset_staff2.py) to recover from the TestChangePassword side-effect left by iter 2 — see rca_of_issue.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run with `pytest tests/ -v -n 0` (serial) per pytest.ini note. Tests share STATE dict; TestOverdueAndSignature must run after TestChangePassword and re-logs-in staff2 inside the class. If staff1/staff2 login returns 401 at the start of a run, the TestChangePassword mutation from a previous iteration was not reverted — run `python /tmp/reset_staff2.py` (or re-seed) to restore seed passwords. Daily Summary Email loop is NOT HTTP-triggerable; only verified via backend log that lifespan task starts without exception. New endpoints under test: GET /api/jobs?overdue=true, is_overdue flag on all job responses, overdue key in /api/dashboard/stats, signature_data+signature_captured_at on status=Completed, Reschedule 400 w/o date/time.",
+  "rca_of_issue": "Flake observed at start of this iteration: both staff1_login and staff2_login returned 401. RCA: TestChangePassword.test_change_password_and_old_token_invalidated mutates staff1's password at runtime, and iter 2's run had similarly mutated staff2's. The seed script only inserts users if missing — it does not re-hash passwords on boot — so the stale hashes persisted into this run. Mitigation applied: a one-off script (/tmp/reset_staff2.py) directly bcrypted the SEED_*_PASSWORD values back onto admin/staff1/staff2 and bumped token_version. Permanent fix (for main agent): make the startup seeder idempotent — on every boot, upsert password_hash for the seed accounts from SEED_*_PASSWORD env vars so test-induced drift self-heals."
+}

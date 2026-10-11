@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 4 backend regression + targeted verification of the two iter-3 fixes for KG Vac Service Job Manager. 63 passed, 3 skipped (pre-existing TEST_ user-state skips in TestUserManagement — not regressions), 0 failures. Added 3 new tests under TestOverdueDateRangeMerge (overdue + wide range includes, overdue + future-only range excludes, overdue + narrow past range includes) and 2 new tests under TestSeedPasswordIdempotency. Explicitly validated RESEED_PASSWORDS=true behavior end-to-end: changed staff2's password out-of-band, confirmed seed login returned 401 and mutated password returned 200 before restart; restarted backend via supervisorctl; confirmed seed login returned 200 and mutated password returned 401 after restart — reseed-on-boot is working. The overdue+date_range merge fix at server.py:790-794 is verified: $lt (now) and $gte/$lte (range) now coexist on scheduled_at correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "Email provider /email/send", "issue": "Pre-existing from iter 3. Backend logs still show 'Email send failed: Client error 422 unknown' for Emergent email integration during forgot-password / assignment / status-change flows. Does not crash any endpoint (caught by try/except) but means emails are silently not delivered in this preview env. Main agent noted a direct curl returned 202; may be payload-shape or env-specific. Non-blocking."},
+      {"endpoint": "Push notifications", "issue": "Pre-existing. EMERGENT_PUSH_KEY=placeholder in backend/.env causes every push to return 401 'invalid X-Push-Key'. Swallowed by exception handler. Non-blocking."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_kgvac_backend.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Both iter-3 regressions are fixed and verified. No new backend action items required.",
+    "(Carried over, non-blocking) Investigate 422 from Emergent email /email/send and set a real EMERGENT_PUSH_KEY for push delivery.",
+    "(Carried over) Consider modularising server.py (now 1049 lines) into routers for maintainability."
+  ],
+  "critical_code_review_comments": [
+    "server.py:473-497 seed_data() correctly reseeds admin+staff1+staff2 password_hash and increments token_version when RESEED_PASSWORDS=true — upsert-on-boot pattern is idempotent and self-heals test drift. Verified by out-of-band mutation + restart.",
+    "server.py:781-794 list_jobs — overdue filter sets {status:$in, scheduled_at:{$lt:now}}, then date range block reads existing query['scheduled_at'] dict and merges $gte/$lte into it instead of overwriting — fix is correct.",
+    "server.py:947 dashboard overdue count uses the same {$lt:now} + status $in semantics as list_jobs, keeping counts and list consistent."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_kgvac_backend.py (appended TestOverdueDateRangeMerge with 4 tests incl. cleanup, and TestSeedPasswordIdempotency with 2 end-of-run seed-login assertions)"
+  ],
+  "success_rate": {"backend": "100% (63/63 executed, 3 pre-existing skips)", "frontend": "N/A (not requested)"},
+  "seed_data_creation": "Reused TEST_-prefixed customers, categories, jobs. New test class TestOverdueDateRangeMerge now self-cleans by cancelling its overdue_merge_job at end of class so re-runs don't accumulate overdue state (one-time repair applied for leftovers from the first run of this iteration).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run pytest with `-n 0` (serial) to respect module-level STATE sharing — the pytest.ini defaults to -n 2 loadscope which breaks because the shared STATE dict isn't visible across xdist worker processes. Example: `cd /app/backend && pytest tests/ -n 0 -v`. All 63 tests should pass; the 3 skips in TestUserManagement are because prior iterations created TEST_newuser@example.com in a certain state and the suite short-circuits (not a bug). The TestChangePassword test now targets staff2 but reverts in-run; combined with RESEED_PASSWORDS=true, cross-iteration drift is self-healing. If you need to verify reseed end-to-end: mutate a seed password, `sudo supervisorctl restart backend`, then login with seed creds (works) and mutated creds (401).",
+  "rca_of_issue": "N/A — all iter-3 fixes validated. For completeness: initial run on second pass flagged one failure (dashboard overdue staff2 == 1 instead of 0) because my TestOverdueDateRangeMerge created a new overdue job for staff2 and didn't cancel it, so a second pytest run would see the orphan job before cleanup. Resolved by adding test_cleanup_overdue_merge_job that cancels the created job at the end of the class and manually cancelling 2 leftover TEST_OverdueMerge jobs via admin API. Suite is now stable across repeated runs (verified 2 clean consecutive runs)."
+}
