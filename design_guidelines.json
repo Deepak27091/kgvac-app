@@ -1,0 +1,189 @@
+{
+  "app_name": "KG Vac Service - Job Manager",
+  "personality": "1 iOS-Native Clean",
+  "personality_one_liner": "A highly readable, professional, and utilitarian command center for field service operations, using crisp navy branding and clean iOS-native layouts.",
+  "color": {
+    "surface": "#FFFFFF",
+    "onSurface": "#0F172A",
+    "surfaceSecondary": "#F4F6F8",
+    "onSurfaceSecondary": "#1E293B",
+    "surfaceTertiary": "#E2E8F0",
+    "onSurfaceTertiary": "#334155",
+    "surfaceInverse": "#0F172A",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#1E3A8A",
+    "brandPrimary": "#1E3A8A",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#3B82F6",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#DBEAFE",
+    "onBrandTertiary": "#1E3A8A",
+    "success": "#10B981",
+    "onSuccess": "#FFFFFF",
+    "successSurface": "#D1FAE5",
+    "warning": "#F59E0B",
+    "onWarning": "#FFFFFF",
+    "warningSurface": "#FEF3C7",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "errorSurface": "#FEE2E2",
+    "info": "#3B82F6",
+    "onInfo": "#FFFFFF",
+    "infoSurface": "#DBEAFE",
+    "processing": "#F97316",
+    "processingSurface": "#FFEDD5",
+    "rescheduled": "#8B5CF6",
+    "rescheduledSurface": "#EDE9FE",
+    "border": "#E2E8F0",
+    "borderStrong": "#CBD5E1",
+    "divider": "#F1F5F9",
+    "muted": "#64748B",
+    "onBrand": "#FFFFFF"
+  },
+  "typography": {
+    "displayFontFamily": "PlusJakartaSans-SemiBold",
+    "textFontFamily": "PlusJakartaSans-Regular",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Maintain generous vertical rhythm for readability in the field. Use md (12pt) between related elements and xl (24pt) between distinct sections. Forms should have generous hit areas.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Feather",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use frosted glass overlays on bottom tab bars and sticky headers over scrolling content",
+      "Use glass on floating action buttons (FAB) for adding jobs",
+      "Apply translucent tinted bases underneath to ensure text readability on glass"
+    ],
+    "dont's": [
+      "Never apply glass to standard list rows, job cards, or form inputs",
+      "Do not use heavily blurred glass where readability of underlying items is still visible and distracting"
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Login",
+      "purpose": "Secure role-based authentication entry point for Admin and Staff.",
+      "states": {
+        "loading": "Centered brand spinner.",
+        "empty": "N/A",
+        "error": "Standard error toast/inline message."
+      },
+      "layout": "Hero image at the top with a subtle vertical gradient scrim. Below it, a clean white card with email/password inputs, 'Forgot Password' link, and a sticky sticky-at-bottom primary 'Sign In' CTA."
+    },
+    {
+      "name": "Dashboard",
+      "purpose": "Role-specific overview showing job stats, earnings (Admin sees all, Staff sees own), and today's schedule at a glance.",
+      "states": {
+        "loading": "Skeleton cards for stats.",
+        "empty": "Illustration indicating no jobs scheduled for today.",
+        "error": "Readable message + Retry button."
+      },
+      "layout": "Top section: Profile greeting and notification bell. Scrollable content: A 2-column grid for summary stats (Total Jobs, Earnings, etc.). Below stats: 'Today's Schedule' vertical list of job cards. Floating Action Button (FAB) anchored bottom-right to quick-add jobs."
+    },
+    {
+      "name": "Calendar",
+      "purpose": "Interactive scheduling view (Daily/Weekly/Monthly) to visualize dispatch and upcoming jobs.",
+      "states": {
+        "loading": "Spinner over calendar grid.",
+        "empty": "No jobs found for selected date.",
+        "error": "Failed to load schedule."
+      },
+      "layout": "Sticky top segment control for Day/Week/Month. Horizontal date scrubber below it. Main area: Scrollable list of jobs mapped to the selected day. Each job card prominently displays status badge and time."
+    },
+    {
+      "name": "All Jobs / My Jobs",
+      "purpose": "Comprehensive list of jobs with advanced search, filter, and sort capabilities.",
+      "states": {
+        "loading": "Skeleton list items.",
+        "empty": "Empty state illustration + 'No jobs found' message.",
+        "error": "Error message with retry."
+      },
+      "layout": "Sticky search bar and filter chips (Status, Date) at the top. Scrollable vertical list of job cards. Each card shows Job ID, Customer Name, Service Type, Time, and Status Badge."
+    },
+    {
+      "name": "Job Details",
+      "purpose": "Deep dive into a specific job, including customer info, service category, status workflow, and activity log.",
+      "states": {
+        "loading": "Skeleton UI for job metadata.",
+        "empty": "N/A",
+        "error": "Error message with retry."
+      },
+      "layout": "Scrollable view. Top: Job title, ID, and large current status badge. Action row: Buttons to update status (Start, Processing, Complete). Sections: Customer Info card, Service Details card, and a chronological Activity Log tracking history."
+    },
+    {
+      "name": "Forms (Add/Edit Job)",
+      "purpose": "Data entry screens to create, edit, schedule, or assign jobs.",
+      "states": {
+        "loading": "Disabled inputs with loading overlay during submission.",
+        "empty": "N/A",
+        "error": "Inline validation errors."
+      },
+      "layout": "Single-column layout with labels above inputs. Sections logically separated (Customer, Service Type, Date/Time, Assignee). Bottom-anchored sticky primary 'Save Job' CTA within a KeyboardAvoidingView."
+    },
+    {
+      "name": "Customer Management",
+      "purpose": "Directory of all customers to quickly attach to jobs or view history.",
+      "states": {
+        "loading": "Skeleton directory list.",
+        "empty": "Empty state illustration + 'Add your first customer'.",
+        "error": "Error message with retry."
+      },
+      "layout": "Sticky search bar. Alphabetical list of customers. Tapping a customer opens Customer Details with their past/upcoming jobs."
+    }
+  ],
+  "images": {
+    "login_hero": {
+      "url": "https://images.unsplash.com/photo-1601342630314-8427c38bf5e6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwxfHxjYWxlbmRhciUyMGNsaXBib2FyZCUyMHRhc2slMjBzY2hlZHVsZSUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3OTE3MDcyMDd8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Professional looking at digital schedule on tablet"
+    },
+    "empty_schedule": {
+      "url": "https://images.unsplash.com/photo-1578625155481-7bc40a6481b6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwyfHxjYWxlbmRhciUyMGNsaXBib2FyZCUyMHRhc2slMjBzY2hlZHVsZSUyMHByb2Zlc3Npb25hbHxlbnwwfHx8fDE3OTE3MDcyMDd8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Clean white calendar indicating open schedule"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly apply the specified Navy Blue, White, and Light Grey palette. The user explicitly requested this override of the default rules.",
+    "Implement the specific status badge colors requested: Scheduled (Yellow), Start (Blue), Processing (Orange), Completed (Green), Rescheduled (Purple), Cancelled (Red). Ensure these colors use a tinted surface background (e.g. warningSurface) with the primary color as text for readability.",
+    "Follow '1 iOS-Native Clean' spacing and radius. Cards should use 'md' (12pt) or 'lg' (16pt) radius with shadow_tier 1. Do not use dense Material layouts.",
+    "For the Dashboard, structure it based on Mobbin field service research: 1. Top profile/notifications, 2. Summary stats grid (2 columns), 3. 'Today's Schedule' list.",
+    "Ensure all primary CTAs (like 'Sign In' or 'Save Job') are sticky at the bottom of the screen, anchored above the safe area, avoiding the need for users to scroll to find them.",
+    "Use Feather icons consistently with a 500 weight. Size them appropriately (16pt for metadata, 24pt for actions).",
+    "Forms must use single-column layouts with labels placed above inputs, not floating.",
+    "Implement glassmorphism selectively: use it on the bottom tab bar and sticky headers over scrollable content. Ensure foreground text on glass is fully readable by adding a translucent tinted base underneath."
+  ]
+}
